@@ -1,0 +1,65 @@
+services:
+  # MySQL Service Configuration
+  db:
+    image: mysql:latest
+    container_name: db
+    command: --authentication_policy=caching_sha2_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root # กำหนด user ของ root mysql
+      MYSQL_DATABASE: my_database # กำหนด database เริ่มต้นของ mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+
+  # PhpMyAdmin Service Configuration
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: db # ระบุ host ที่จะให้ phpmyadmin ไปจัดการ ซึ่งสามารถใส่เป็นชื่อ container name (db) ได้เลย
+      PMA_PORT: 3306 # ระบุ port ของ Database
+      PMA_ARBITRARY: 1 # เปิดใช้งาน arbitrary login
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+  # Nuxt.js App
+  nuxt:
+    build:
+      context: ./font-end/example
+      dockerfile: Dockerfile
+    container_name: nuxt_app
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./font-end/example:/usr/src/app
+    networks:
+      - frontend
+    depends_on:
+      - db  # Change this from 'database' to 'db'
+
+  # Nest.js App
+  nest:
+    build:
+      context: ./back-end/example/
+      dockerfile: Dockerfile
+    container_name: nest_app
+    ports:
+      - "7777:7777"
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./back-end/example:/usr/src/app
+    networks:
+      - backend
+
+volumes:
+  db_data:
+
+networks:
+  frontend:
+  backend:
